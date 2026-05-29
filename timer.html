@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exclusive Work Time Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            color: #333;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .add-project-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #3498db;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .btn-add {
+            background-color: #3498db;
+            color: white;
+            padding: 0 20px;
+            font-size: 16px;
+        }
+
+        .btn-add:hover {
+            background-color: #2980b9;
+        }
+
+        .project-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .project-card {
+            background: #fafafa;
+            border: 1px solid #e1e1e1;
+            border-left: 5px solid #bdc3c7;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
+        }
+
+        /* Jo card chal raha hoga wo highlight ho jayega */
+        .project-card.running {
+            border-left: 5px solid #2ecc71;
+            border-color: #2ecc71;
+            background: #f0fdf4;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.15);
+        }
+
+        .project-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .project-time {
+            font-size: 24px;
+            font-family: monospace;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .project-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-toggle {
+            padding: 10px 15px;
+            font-size: 14px;
+            color: white;
+        }
+
+        .btn-toggle.start {
+            background-color: #2ecc71;
+        }
+
+        .btn-toggle.pause {
+            background-color: #f39c12;
+        }
+
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+
+        .report-btn {
+            width: 100%;
+            background-color: #9b59b6;
+            color: white;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 8px;
+        }
+
+        .report-btn:hover {
+            background-color: #8e44ad;
+        }
+
+        /* Report Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .report-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 16px;
+        }
+
+        .total-row {
+            margin-top: 15px;
+            border-top: 2px solid #333;
+            padding-top: 15px;
+            font-size: 18px;
+        }
+
+        .close-modal {
+            margin-top: 25px;
+            width: 100%;
+            padding: 12px;
+            background: #34495e;
+            color: white;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>WorkLog Tracker</h1>
+        <p class="subtitle">Only one task runs at a time. Click play to auto-pause others.</p>
+
+        <div class="add-project-container">
+            <input type="text" id="projectName" placeholder="Enter Project or Task Name..."
+                onkeypress="handleKeyPress(event)">
+            <button class="btn-add" onclick="addProject()">Add Task</button>
+        </div>
+
+        <div class="project-list" id="projectList">
+        </div>
+
+        <button class="report-btn" onclick="generateReport()">📋 Generate Final Report</button>
+    </div>
+
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <h2>End of Day Summary</h2>
+            <div id="reportData"></div>
+            <button class="close-modal" onclick="closeModal()">Close Window</button>
+        </div>
+    </div>
+
+    <script>
+        let projects = JSON.parse(localStorage.getItem('timeTrackerData')) || [];
+
+        renderProjects();
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') addProject();
+        }
+
+        function addProject() {
+            const input = document.getElementById('projectName');
+            const name = input.value.trim();
+
+            if (name === "") return alert("Please enter a project name!");
+
+            const newProject = {
+                id: Date.now(),
+                name: name,
+                timeInSeconds: 0,
+                isRunning: false
+            };
+
+            projects.push(newProject);
+            input.value = "";
+            saveData();
+            renderProjects();
+        }
+
+        // MAIND LOGIC UPDATE HERE: Auto-Pause others
+        function toggleTimer(id) {
+            const projectToToggle = projects.find(p => p.id === id);
+
+            if (projectToToggle) {
+                // Agar hum ise on kar rahe hain
+                if (!projectToToggle.isRunning) {
+                    // Toh baaki sabko pehle pause kar do
+                    projects.forEach(p => p.isRunning = false);
+                    // Fir isko on karo
+                    projectToToggle.isRunning = true;
+                } else {
+                    // Agar ye pehle se on tha, toh isko bas pause kar do
+                    projectToToggle.isRunning = false;
+                }
+
+                saveData();
+                renderProjects();
+            }
+        }
+
+        function deleteProject(id) {
+            if (confirm("Are you sure you want to delete this log?")) {
+                projects = projects.filter(p => p.id !== id);
+                saveData();
+                renderProjects();
+            }
+        }
+
+        // Live display in format HH:MM:SS
+        function formatTime(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // Perfect reporting format with Hours, Minutes, and Seconds
+        function formatTimeForReport(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+
+            let timeString = "";
+            if (h > 0) timeString += `${h}h `;
+            if (m > 0 || h > 0) timeString += `${m}m `;
+            timeString += `${s}s`;
+
+            return timeString;
+        }
+
+        function renderProjects() {
+            const list = document.getElementById('projectList');
+            list.innerHTML = "";
+
+            if (projects.length === 0) {
+                list.innerHTML = "<p style='text-align:center; color:#999;'>No projects added yet. Start by adding one above!</p>";
+                return;
+            }
+
+            projects.forEach(project => {
+                const card = document.createElement('div');
+                card.className = `project-card ${project.isRunning ? 'running' : ''}`;
+
+                card.innerHTML = `
+                    <div class="project-info">
+                        <div class="project-name">${project.name}</div>
+                        <div class="project-time" id="time-${project.id}">${formatTime(project.timeInSeconds)}</div>
+                    </div>
+                    <div class="project-controls">
+                        <button class="btn-toggle ${project.isRunning ? 'pause' : 'start'}" onclick="toggleTimer(${project.id})">
+                            ${project.isRunning ? '⏸ Pause' : '▶ Play'}
+                        </button>
+                        <button class="btn-delete" onclick="deleteProject(${project.id})">🗑</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function saveData() {
+            localStorage.setItem('timeTrackerData', JSON.stringify(projects));
+        }
+
+        // Global Loop to increment time
+        setInterval(() => {
+            let needsSave = false;
+            projects.forEach(project => {
+                if (project.isRunning) {
+                    project.timeInSeconds++;
+                    needsSave = true;
+                    const timeElement = document.getElementById(`time-${project.id}`);
+                    if (timeElement) {
+                        timeElement.innerText = formatTime(project.timeInSeconds);
+                    }
+                }
+            });
+            if (needsSave) saveData();
+        }, 1000);
+
+        // --- Report Generation Logic ---
+        function generateReport() {
+            // Auto pause all projects when generating report
+            projects.forEach(p => p.isRunning = false);
+            saveData();
+            renderProjects();
+
+            const reportData = document.getElementById('reportData');
+            reportData.innerHTML = "";
+
+            let totalDaySeconds = 0;
+
+            if (projects.length === 0) {
+                reportData.innerHTML = "<p>No work logged today.</p>";
+            } else {
+                projects.forEach(p => {
+                    totalDaySeconds += p.timeInSeconds;
+                    reportData.innerHTML += `
+                        <div class="report-item">
+                            <strong>${p.name}</strong>
+                            <span style="color: #555;">${formatTimeForReport(p.timeInSeconds)}</span>
+                        </div>
+                    `;
+                });
+
+                // Perfect Grand Total
+                reportData.innerHTML += `
+                    <div class="report-item total-row">
+                        <strong>TOTAL WORK TIME</strong>
+                        <strong style="color: #2ecc71;">${formatTimeForReport(totalDaySeconds)}</strong>
+                    </div>
+                `;
+            }
+
+            document.getElementById('reportModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+    </script>
+
+</body>
+
+</html>
